@@ -15,7 +15,7 @@ class NodeChildrens(object):
 
     def update(self, tokens):
         self.tokens.update(tokens)
-    
+
     def add(self):
         return self.tokens[0].value + self.tokens[1].value
 
@@ -28,7 +28,7 @@ class NodeChildrens(object):
     def div(self):
         return self.tokens[0].value / self.tokens[1].value
 
-    def if(self):
+    def _if(self):
         if self.tokens[0]:
             return self.tokens[1].value
         else:
@@ -56,7 +56,7 @@ class ASTNode(object):
         self.children.append(child)
 
     def update_children(self, children):
-        self.children.update(children)
+        self.children.extend(children)
 
     def get_children(self):
         return self.children
@@ -64,6 +64,17 @@ class ASTNode(object):
     @property
     def value(self):
         return calcuate(self)
+
+    def __repr__(self):
+        return '(%s (%s))' % (self.token.name, ','.join([str(x) for x in self.children]))
+
+
+class ASTTree(object):
+    def __init__(self):
+        self.nodes = []
+
+    def add(self, ast_node):
+        self.nodes.append(ast_node)
 
 
 def parse(tokens):
@@ -73,9 +84,17 @@ def parse(tokens):
     for token in tokens:
         if token.is_opt:
             root = ASTNode(token)
+            token = tokens.next
+            last_children.append(token)
             root.update_children(last_children)
         else:
             last_children.append(token)
+    print root
+
 
 if __name__ == '__main__':
-    parse
+    from lexer import lex
+    with open('test.s') as f:
+        characters = f.read()
+        tokens = lex(characters) 
+        parse(tokens)

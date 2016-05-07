@@ -14,7 +14,8 @@ class TOKENTYPE(object):
 
 
 class TokenRegex(object):
-    def __init__(self, regex, name,type=TOKENTYPE.RSV, priority=1, is_opt=True):
+    def __init__(self, regex, name,type=TOKENTYPE.RSV, priority=1, \
+            is_opt=True):
         self.regex = regex
         self.name = name
         self.type = type
@@ -27,10 +28,14 @@ class Token(object):
     def __init__(self, value, token_regex):
         self.value = value
         self.name = token_regex.name
+        self.is_opt = token_regex.is_opt
         self.priority = token_regex.priority
 
     def __repr__(self):
         return '<Token(%s) %s %s>' % (self.name, self.value, self.priority)
+
+    def is_end(self):
+        return True if self.name == 'end' else False
 
 
 _TokenRegexs = (
