@@ -52,44 +52,60 @@ class ASTNode(object):
     def token_name(self):
         return self.token.name
 
+    @property
+    def priority(self):
+        return self.token.priority
+
+    @property
+    def is_opt(self):
+        return self.token.is_opt
+
     def add_child(self, child):
         self.children.append(child)
 
     def update_children(self, children):
         self.children.extend(children)
 
-    def get_children(self):
-        return self.children
+    def pop_child(self):
+        return self.children.pop()
+
+    def is_leaf(self):
+        return True if not self.token.is_opt else False
 
     @property
     def value(self):
         return calcuate(self)
 
-    def __repr__(self):
-        return '(%s (%s))' % (self.token.name, ','.join([str(x) for x in self.children]))
-
 
 class ASTTree(object):
     def __init__(self):
-        self.nodes = []
+        self.trees = []
 
-    def add(self, ast_node):
-        self.nodes.append(ast_node)
+    def add(self, ast_tree):
+        self.trees.append(ast_tree)
 
 
 def parse(tokens):
     root = None
-    last_priority = 0
-    last_children = []
+    last_opt = None
     for token in tokens:
-        if token.is_opt:
-            root = ASTNode(token)
-            token = tokens.next
-            last_children.append(token)
-            root.update_children(last_children)
+        node = ASTNode(token)
+        if node.is_opt:
+            next_node = ASTNode(tokens.next())
+            if node.priority <= last_opt.priority:
+                node.add_child(last_opt)
+                next_node = ASTNode(tokens.next())
+                node.add_child(next_node)
+                last_opt = node
+            else:
+                node.add_child(last_opt.pop_child())
+                next_node = ASTNode(tokens.next())
+                node.add_child(next_node)
+                last_opt = node
         else:
-            last_children.append(token)
-    print root
+            root = node
+            last_opt = root
+    return root
 
 
 if __name__ == '__main__':
@@ -97,4 +113,4 @@ if __name__ == '__main__':
     with open('test.s') as f:
         characters = f.read()
         tokens = lex(characters) 
-        parse(tokens)
+        print parse(tokens)
