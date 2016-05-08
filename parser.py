@@ -76,6 +76,13 @@ class ASTNode(object):
     def value(self):
         return calcuate(self)
 
+    def __str__(self):
+        if self.is_leaf:
+            return '[leaf (%s)]' % self.token.value
+        else:
+            return '[%s (%s), (%s)]' % (self.token_name, str(self.children[0]), 
+                                    str(self.children[1]))
+
 
 class ASTTree(object):
     def __init__(self):
@@ -102,10 +109,11 @@ def parse(tokens):
                 next_node = ASTNode(tokens.next())
                 node.add_child(next_node)
                 last_opt = node
-        else:
             root = node
-            last_opt = root
-    return root
+        else:
+            last_opt = node
+            root = node
+    print str(root)
 
 
 if __name__ == '__main__':
@@ -113,4 +121,4 @@ if __name__ == '__main__':
     with open('test.s') as f:
         characters = f.read()
         tokens = lex(characters) 
-        print parse(tokens)
+        parse(tokens)
