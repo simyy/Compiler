@@ -9,44 +9,43 @@ class UnkownTokenName(Exception):
         return 'UnkownTokenName <%s>' % self.token_name
 
 
-class NodeChildrens(object):
-    def __init__(self, tokens):
-        self.tokens = tokens
+class Opt(object):
+    @classmethod
+    def add(self, children):
+        return children[0].value + children[1].value
 
-    def update(self, tokens):
-        self.tokens.update(tokens)
+    @classmethod
+    def sub(self, children):
+        return children[0].value - children[1].value
 
-    def add(self):
-        return self.tokens[0].value + self.tokens[1].value
+    @classmethod
+    def mux(self, children):
+        return children[0].value * children[1].value
 
-    def sub(self):
-        return self.tokens[0].value - self.tokens[1].value
+    @classmethod
+    def div(self, children):
+        return children[0].value / children[1].value
 
-    def mux(self):
-        return self.tokens[0].value * self.tokens[1].value
-
-    def div(self):
-        return self.tokens[0].value / self.tokens[1].value
-
-    def _if(self):
-        if self.tokens[0]:
-            return self.tokens[1].value
+    @classmethod
+    def _if(self, children):
+        if children[0]:
+            return children[1].value
         else:
-            return self.tokens[2].value
+            return children[2].value
 
 
 def calcuate(node):
-    if hasattr(NodeChildrens, node.token_name):
-        f = getattr(NodeChildrens, node.token_name)
+    if hasattr(Opt, node.token_name):
+        f = getattr(Opt, node.token_name)
         return f(node.children)
     else:
         raise UnkownTokenName(node.token_name)
 
 
 class ASTNode(object):
-    def __init__(self, token, children=[]):
+    def __init__(self, token):
         self.token = token
-        self.children = children
+        self.children = list()
  
     @property
     def token_name(self):
@@ -63,39 +62,34 @@ class ASTNode(object):
     def add_child(self, child):
         self.children.append(child)
 
-    def update_children(self, children):
-        self.children.extend(children)
-
     def pop_child(self):
         return self.children.pop()
 
-    def is_leaf(self):
-        return True if not self.token.is_opt else False
-
     @property
     def value(self):
-        if self.is_leaf:
+        if self.is_opt:
+            return calcuate(self)
+        else:
             return self.token.value
-        return calcuate(self)
 
     def __str__(self):
-        if self.is_leaf:
+        if not self.is_opt:
             return '[leaf (%s)]' % self.token.value
         else:
             return '[%s (%s), (%s)]' % (self.token_name, str(self.children[0]), 
                                     str(self.children[1]))
+    __repr__ =  __str__
 
 
 class ASTTree(object):
     def __init__(self):
-        self.trees = []
+        self.trees = list()
 
     def add(self, ast_tree):
         self.trees.append(ast_tree)
 
 
 def parse(tokens):
-    root = None
     last_opt = None
     for token in tokens:
         node = ASTNode(token)
@@ -103,15 +97,16 @@ def parse(tokens):
             next_node = ASTNode(tokens.next())
             if node.priority <= last_opt.priority:
                 node.add_child(last_opt)
+                node.add_child(next_node)
+                last_opt = node
             else:
                 node.add_child(last_opt.pop_child())
-            node.add_child(next_node)
-            last_opt = node
-            root = node
+                node.add_child(next_node)
+                last_opt.add_child(node)
         else:
             last_opt = node
-            root = node
-    return root
+        print last_opt
+    return last_opt
 
 
 if __name__ == '__main__':
