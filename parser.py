@@ -74,6 +74,8 @@ class ASTNode(object):
 
     @property
     def value(self):
+        if self.is_leaf:
+            return self.token.value
         return calcuate(self)
 
     def __str__(self):
@@ -101,19 +103,15 @@ def parse(tokens):
             next_node = ASTNode(tokens.next())
             if node.priority <= last_opt.priority:
                 node.add_child(last_opt)
-                next_node = ASTNode(tokens.next())
-                node.add_child(next_node)
-                last_opt = node
             else:
                 node.add_child(last_opt.pop_child())
-                next_node = ASTNode(tokens.next())
-                node.add_child(next_node)
-                last_opt = node
+            node.add_child(next_node)
+            last_opt = node
             root = node
         else:
             last_opt = node
             root = node
-    print str(root)
+    return root
 
 
 if __name__ == '__main__':
@@ -121,4 +119,5 @@ if __name__ == '__main__':
     with open('test.s') as f:
         characters = f.read()
         tokens = lex(characters) 
-        parse(tokens)
+        root = parse(tokens)
+        print root.value

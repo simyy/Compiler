@@ -26,7 +26,7 @@ class TokenRegex(object):
 
 class Token(object):
     def __init__(self, value, token_regex):
-        self.value = value
+        self.value = int(value) if value.isdigit() else value
         self.name = token_regex.name
         self.is_opt = token_regex.is_opt
         self.priority = token_regex.priority
