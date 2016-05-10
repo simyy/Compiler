@@ -8,31 +8,30 @@ import sys
 
 class TOKENTYPE(object):
     IGN = 0 # ignore
-    RSV = 1 # reserved
+    OPT = 1 # oprate
+    SCP = 1 # reserved
     INT = 2 # int
     STR = 3 # string
 
 
 class TokenRegex(object):
-    def __init__(self, regex, name,type=TOKENTYPE.RSV, priority=1, \
-            is_opt=True):
+    def __init__(self, regex, name,type=TOKENTYPE.OPT, priority=1):
         self.regex = regex
         self.name = name
         self.type = type
         self.priority = priority
         self.value = None
-        self.is_opt = is_opt
 
 
 class Token(object):
     def __init__(self, value, token_regex):
         self.value = int(value) if value.isdigit() else value
         self.name = token_regex.name
-        self.is_opt = token_regex.is_opt
+        self.type = token_regex.type
         self.priority = token_regex.priority
 
     def __repr__(self):
-        return '<Token(%s) %s %s>' % (self.name, self.value, self.priority)
+        return '<Token(\'%s\') %s %s>' % (self.name, self.value, self.priority)
 
     def is_end(self):
         return True if self.name == 'end' else False
@@ -44,18 +43,24 @@ _TokenRegexs = (
     TokenRegex(r'\-', 'sub'),
     TokenRegex(r'\*', 'mux', priority=2),
     TokenRegex(r'\/', 'div', priority=2),
-    TokenRegex(r'\(', '(', priority=3),
-    TokenRegex(r'\)', ')', priority=3),
-    TokenRegex(r'\{', '{', priority=3),
-    TokenRegex(r'\}', '}', priority=3),
+    TokenRegex(r'\(', '(', type=TOKENTYPE.SCP, priority=3),
+    TokenRegex(r'\)', ')', type=TOKENTYPE.SCP, priority=3),
+    TokenRegex(r'\{', '{', type=TOKENTYPE.SCP, priority=3),
+    TokenRegex(r'\}', '}', type=TOKENTYPE.SCP, priority=3),
     TokenRegex(r'if', '_if'),
     TokenRegex(r'else', '_else'),
     TokenRegex(r';', 'end'),
-    TokenRegex(r'[0-9]+', 'int',  TOKENTYPE.INT, is_opt=False),
-    TokenRegex(r'[a-zA-Z][a-zA-Z0-9_]*', 'str', TOKENTYPE.STR, is_opt=False),
-    TokenRegex(r'\n', 'enter', TOKENTYPE.IGN),
-    TokenRegex(r' ', 'blank', TOKENTYPE.IGN),
+    TokenRegex(r'[0-9]+', 'int',  type=TOKENTYPE.INT),
+    TokenRegex(r'[a-zA-Z][a-zA-Z0-9_]*', 'str', type=TOKENTYPE.STR),
+    TokenRegex(r'\n', 'enter', type=TOKENTYPE.IGN),
+    TokenRegex(r' ', 'blank', type=TOKENTYPE.IGN),
 )
+
+
+TOKEN_SCP_MATCH = {
+    '(':  ')',
+    '{':  '}',
+}
 
 
 def lex(characters):

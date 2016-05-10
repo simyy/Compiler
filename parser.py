@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from lexer import TOKENTYPE
+from lexer import TOKEN_SCP_MATCH
+
+
 class UnkownTokenName(Exception):
     def __init__(self, token_name):
         self.token_name
@@ -10,23 +14,23 @@ class UnkownTokenName(Exception):
 
 
 class Opt(object):
-    @classmethod
+    @staticmethod
     def add(self, children):
         return children[0].value + children[1].value
 
-    @classmethod
+    @staticmethod
     def sub(self, children):
         return children[0].value - children[1].value
 
-    @classmethod
+    @staticmethod
     def mux(self, children):
         return children[0].value * children[1].value
 
-    @classmethod
+    @staticmethod
     def div(self, children):
         return children[0].value / children[1].value
 
-    @classmethod
+    @staticmethod
     def _if(self, children):
         if children[0]:
             return children[1].value
@@ -37,7 +41,7 @@ class Opt(object):
 def calcuate(node):
     if hasattr(Opt, node.token_name):
         f = getattr(Opt, node.token_name)
-        return f(node.children)
+        return f(Opt, node.children)
     else:
         raise UnkownTokenName(node.token_name)
 
@@ -57,7 +61,11 @@ class ASTNode(object):
 
     @property
     def is_opt(self):
-        return self.token.is_opt
+        return self.token.type == TOKENTYPE.OPT
+
+    @property
+    def is_scp(self):
+        return self.token.type == TOKENTYPE.SCP
 
     def add_child(self, child):
         self.children.append(child)
@@ -74,9 +82,9 @@ class ASTNode(object):
 
     def __str__(self):
         if not self.is_opt:
-            return '[leaf (%s)]' % self.token.value
+            return '(leaf [%s])' % self.token.value
         else:
-            return '[%s (%s), (%s)]' % (self.token_name, str(self.children[0]), 
+            return '(%s %s, %s)' % (self.token_name, str(self.children[0]), 
                                     str(self.children[1]))
     __repr__ =  __str__
 
@@ -89,12 +97,17 @@ class ASTTree(object):
         self.trees.append(ast_tree)
 
 
-def parse(tokens):
+def parse(tokens, stop_name=None):
     last_opt = None
     for token in tokens:
+        if stop_name and token.name == stop_name:
+            return last_opt
         node = ASTNode(token)
         if node.is_opt:
             next_node = ASTNode(tokens.next())
+            if next_node.is_scp:
+                next_node = parse(tokens, 
+                    stop_name=TOKEN_SCP_MATCH.get(next_node.token_name))
             if node.priority <= last_opt.priority:
                 node.add_child(last_opt)
                 node.add_child(next_node)
